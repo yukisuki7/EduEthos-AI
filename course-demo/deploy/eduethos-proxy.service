@@ -1,0 +1,28 @@
+[Unit]
+Description=EduEthos dedicated HTTPS proxy
+After=network-online.target eduethos.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=caddy
+Group=caddy
+Environment=XDG_DATA_HOME=/var/lib/eduethos-proxy/data
+Environment=XDG_CONFIG_HOME=/var/lib/eduethos-proxy/config
+ExecStart=/usr/bin/caddy run --config /etc/eduethos/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+StateDirectory=eduethos-proxy
+StateDirectoryMode=0700
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/eduethos-proxy
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

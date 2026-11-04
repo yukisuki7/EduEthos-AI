@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <title>知芯 · EduEthos 学习工作室</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="data.js"></script>
+  <script defer src="analytics.js"></script>
+  <script defer src="report.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="vendor/alpine.min.js"></script>
+</head>
+<body x-data="eduApp()" @keydown.escape.window="sourceOpen ? closeSource() : (entryOpen ? showEntry() : (sidebarOpen ? sidebarOpen=false : null))">
+  <div class="app-shell" x-cloak :style="identityReady ? null : {display: 'none'}" :class="{'sidebar-is-open': sidebarOpen,'analytics-layout':view==='analytics'}" :inert="entryOpen || sourceOpen || !identityReady">
+    <button class="scrim" type="button" aria-label="关闭导航" x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen=false"></button>
+    <aside class="sidebar" aria-label="对话历史">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true">知</div>
+        <div class="brand-copy"><strong>知芯 <span>·</span> EduEthos</strong><small>学习工作室</small></div>
+        <button class="icon-button sidebar-close" aria-label="关闭导航" @click="sidebarOpen=false">×</button>
+      </div>
+
+      <button class="new-chat-button" @click="newChat();sidebarOpen=false"><span aria-hidden="true">＋</span>新建对话</button>
+      <div class="history-block">
+        <div class="side-heading"><span>对话历史</span><span class="chapter-count" x-text="sessions.length+' 条'"></span></div>
+        <template x-for="session in sessions" :key="session.id">
+          <button class="history-item" :class="{'is-current': session.id===activeSessionId}" @click="openSession(session.id); sidebarOpen=false"><span class="history-dot"></span><span x-text="session.title"></span></button>
+        </template>
+        <p class="empty-note" x-show="sessions.length===0">提问后，对话会显示在这里</p>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="user-avatar" x-text="(displayName || '林').slice(0,1)"></div>
+        <div class="user-meta"><strong x-text="displayName || '林同学'"></strong><span x-text="role==='admin' ? '管理员' : role==='student' ? '学生' : (accountMode==='isolated'?'教师':'教师体验')"></span></div>
+        <button class="identity-button" :aria-label="accountMode==='isolated'?'退出账号':'账号选项'" @click="accountMode==='isolated'?logoutDemo():showEntry();sidebarOpen=false" x-show="demoLoginEnabled" x-text="accountMode==='isolated'?'退出账号':'账号选项'"></button>
+        <button class="identity-button" aria-label="切换体验身份" @click="showEntry();sidebarOpen=false" x-show="!demoLoginEnabled">切换体验身份</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" aria-label="打开对话历史" @click="sidebarOpen=true">☰</button>
+        <div class="breadcrumbs"><span>课程</span><i>/</i><strong>计算机组成原理</strong></div>
+      </header>
+
+      <div class="view-tabs" aria-label="工作区">
+        <button :class="{'active':view==='chat'}" @click="view='chat'">学习问答</button>
+        <template x-if="role==='teacher'"><button :class="{'active':view==='analytics'}" @click="view='analytics';accountMode==='isolated'&&loadTeacherQuestions()">数据总结</button></template>
+        <template x-if="role==='admin'&&accountMode==='isolated'"><button :class="{'active':view==='admin'}" @click="view='admin';loadAdminOverview()">账号管理</button></template>
+      </div>
+      <div class="storage-warning" role="alert" x-show="storageWarning"><span x-text="storageWarning"></span><button type="button" x-show="accountMode==='isolated'&&demoUser&&!stateConflict" @click="retrySave()">重试保存</button></div>
+
+      <section class="chat-view" x-show="view==='chat'" x-transition.opacity>
+        <div class="chat-scroll">
+          <div class="lesson-heading" :class="{'is-compact':messages.length>0}">
+            <div class="lesson-kicker"><span class="live-dot"></span><span>计算机组成原理 · 全课程</span></div>
+            <h1 x-show="messages.length===0">把课程问题，想清楚一点</h1>
+            <p x-show="messages.length===0">围绕整门课程提问，答案会标出对应的讲义依据。</p>
+          </div>
+
+          <template x-if="messages.length===0">
+            <section class="empty-chat">
+              <div class="empty-chat-mark">知</div><h2>从一个具体问题开始</h2>
+              <p>可以从课程中的一个概念入手，也可以直接输入你想弄懂的内容。</p>
+              <span class="empty-chat-hint">选择下方问题，或在输入框中描述你的疑问</span>
+            </section>
+          </template>
+
+          <template x-for="message in messages" :key="message.id">
+            <article class="message-thread" :class="{'message-selected':message.id===activeMessageId}" @click="selectMessage(message.id)">
+              <div class="question-bubble"><div class="bubble-label">学习提问 <time x-text="message.time"></time></div><p x-text="message.question"></p></div>
+              <div class="answer-layout"><div class="assistant-mark">知</div><div class="answer-content">
+                <div class="answer-meta"><strong>学习助手</strong><span>·</span><span x-text="message.answer.label"></span><span class="unsupported" x-show="message.answer.supported===false">暂未解答</span></div>
+                <template x-if="message.answer.sections?.length"><div class="answer-sections"><template x-for="(section,sectionIndex) in message.answer.sections" :key="sectionIndex"><section class="answer-section">
+                  <template x-for="(paragraph,index) in section.paragraphs" :key="'p'+index"><p x-text="paragraph"></p></template>
+                  <ul class="answer-points" x-show="section.bullets.length"><template x-for="(bullet,index) in section.bullets" :key="'b'+index"><li x-text="bullet"></li></template></ul>
+                </section></template></div></template>
+                <template x-if="!message.answer.sections?.length"><div><template x-for="(paragraph,index) in message.answer.paragraphs" :key="index"><p x-text="paragraph"></p></template><ul class="answer-points" x-show="message.answer.bullets.length"><template x-for="(bullet,index) in message.answer.bullets" :key="index"><li x-text="bullet"></li></template></ul></div></template>
+                <template x-if="message.answer.value"><p x-text="message.answer.value"></p></template>
+                <div class="feedback-row"><button @click.stop="setFeedback(message.id,'helpful')" :class="{'feedback-active':message.feedback==='helpful'}">♡ 有帮助</button><button @click.stop="setFeedback(message.id,'unclear')" :class="{'feedback-active':message.feedback==='unclear'}">↗ 还不清楚</button></div>
+                <div class="followup-list" x-show="message.answer.followups.length"><span>接下来可以继续问</span><template x-for="followup in message.answer.followups" :key="followup"><button @click.stop="send(followup)" x-text="followup"></button></template></div>
+              </div></div>
+            </article>
+          </template>
+          <div class="error-banner" role="alert" x-show="error" x-text="error"></div>
+        </div>
+
+        <div class="composer-area">
+          <div class="mobile-evidence" x-show="relevantSources.length"><button type="button" @click="showSource(relevantSources[0].id)"><span>查看本次依据</span><span x-text="relevantSources.length+' 条资料 →'"></span></button></div>
+          <div class="suggestions" x-show="messages.length===0 && suggestionQuestions.length"><span>试着问</span><template x-for="question in suggestionQuestions" :key="question"><button @click="send(question)" x-text="question"></button></template></div>
+          <form class="composer" @submit.prevent="send()">
+            <label class="sr-only" for="question-draft">输入课程问题</label>
+            <textarea id="question-draft" x-model="draft" maxlength="1000" rows="1" placeholder="继续提问，或描述你想弄懂的概念…" @keydown.enter="if(!$event.shiftKey && !$event.isComposing){$event.preventDefault();send()}"></textarea>
+            <div class="composer-tools"><span class="char-count"><span x-text="draft.length"></span>/1000</span><button type="submit" class="send-button" :disabled="busy || !draft.trim()"><span x-show="!busy">发送</span><span x-show="busy">正在检索并回答…</span><span aria-hidden="true">↑</span></button></div>
+          </form>
+          <div class="composer-foot"><span>Enter 发送 · Shift + Enter 换行</span><span x-text="serviceStatus"></span></div>
+          <div class="composer-foot"><span>启用模型后，问题、最近对话与相关资料片段会发送至 DeepSeek</span><span x-show="accountMode!=='isolated'&&signInRequired"><a href="/signin-with-chatgpt?returnTo=%2F" target="_top">登录后继续</a></span></div>
+        </div>
+      </section>
+
+      <section class="analytics-view page-view" x-show="role==='teacher' && view==='analytics'" x-transition.opacity>
+        <div class="page-heading analytics-heading"><div><span class="eyebrow" x-text="accountMode==='isolated'?'教师工作区':'教师体验 · 学习概览'"></span><h1>数据总结</h1><p>查看课程问题分布与学生常见困惑。</p></div>
+          <div class="analytics-source-switch" role="group" aria-label="数据来源" x-show="accountMode!=='isolated'"><button :class="{'selected':analyticsSource==='actual'}" :aria-pressed="analyticsSource==='actual'" @click="setAnalyticsSource('actual')">本机记录</button><button :class="{'selected':analyticsSource==='sample'}" :aria-pressed="analyticsSource==='sample'" @click="setAnalyticsSource('sample')">演示数据</button></div>
+        </div>
+        <div class="analytics-source-note" :class="{'sample-note':analyticsSource==='sample'}" role="status" x-text="accountMode==='isolated' ? ('已授权班级：'+(teacherClasses.map(c=>c.name).join('、')||'暂无班级授权')) : analyticsSource==='actual' ? '本机记录：仅当前浏览器中的学生体验提问，未接入班级数据库' : '演示数据：用于展示统计效果，不代表真实学生使用情况'"></div>
+        <p class="analytics-retention-note" x-show="accountMode==='isolated'">统计数据由服务器按已授权班级汇总，仅包含学生提问。</p>
+        <p class="analytics-retention-note" x-show="accountMode!=='isolated'&&analyticsSource==='actual'">仅统计本机保留的最近 20 个对话、每个最多 40 轮；新记录排除教师试问，旧版未标记身份的记录会在下方注明。</p>
+        <div class="analytics-controls"><label for="analytics-range">统计时间</label><select id="analytics-range" x-model="analyticsRange"><option value="all">全部记录</option><option value="7">最近 7 天</option><option value="30">最近 30 天</option></select></div>
+        <div class="analytics-metrics" aria-label="核心指标"><article class="metric-card"><span>总提问数</span><strong x-text="analytics.total"></strong><small>当前来源与时间范围内</small></article><article class="metric-card"><span>涉及分类数</span><strong x-text="analytics.categories.filter(category=>category.count>0).length"></strong><small>含其他 / 待归类问题</small></article><article class="metric-card"><span>暂未解答</span><strong x-text="analytics.unresolvedCount"></strong><small>含资料不足及无法解答问题</small></article></div>
+        <div class="analytics-notes" x-show="accountMode!=='isolated'&&(analytics.untimedCount>0 || analytics.legacyRoleCount>0)"><p x-show="analytics.untimedCount>0"><strong>日期提示</strong> <span x-text="analyticsRange==='all' ? analytics.untimedCount+' 条旧记录无提问日期，当前仍纳入全部记录。' : '另有 '+analytics.untimedCount+' 条旧记录无提问日期，未纳入所选时间范围。'"></span></p><p x-show="analytics.legacyRoleCount>0"><strong>身份提示</strong> <span x-text="analytics.legacyRoleCount+' 条旧版记录未标记身份，已纳入本机记录。'"></span></p></div>
+        <template x-if="analytics.total===0"><section class="analytics-empty"><div class="empty-chat-mark">统</div><h2>当前范围内还没有可汇总的提问</h2><p x-text="accountMode==='isolated'?'已授权班级范围内暂无学生提问。':'可以查看演示数据了解统计版式；演示数据不代表真实学生使用情况。'"></p><button class="primary-button" x-show="accountMode!=='isolated'" @click="setAnalyticsSource('sample')">查看演示数据</button></section></template>
+        <template x-if="analytics.total>0"><div class="analytics-content">
+          <div class="analytics-grid">
+            <section class="analytics-panel category-panel"><div class="analytics-panel-heading"><div><span class="eyebrow">问题分布</span><h2>分类提问次数与占比</h2></div><button class="filter-chip" :class="{'selected':analyticsFilter==='all'}" @click="setAnalyticsFilter('all')">全部分类</button></div><p class="chart-explainer">柱形表示提问占比；点击分类可筛选下方高频问题。</p>
+              <div class="category-bars"><template x-for="category in analytics.categories" :key="category.id"><button class="category-row" :class="{'filtered':analyticsFilter===category.id}" :title="category.label+'：'+category.count+' 次提问，占 '+category.percent+'%'" @click="setAnalyticsFilter(category.id)"><span class="category-label" x-text="category.label"></span><span class="category-track"><span class="category-fill" :style="'width:'+Math.max(0,Math.min(100,category.percent))+'%' "></span></span><span class="category-count" :aria-label="category.count+' 次提问'" x-text="category.count"></span><span class="category-percent" :aria-label="'占比 '+category.percent+'%'" x-text="category.percent+'%' "></span></button></template></div>
+            </section>
+            <section class="analytics-panel word-panel"><div class="analytics-panel-heading"><div><span class="eyebrow">高频概念</span><h2>问题关键词</h2></div></div><div class="word-cloud"><template x-for="word in analytics.keywords" :key="word.text"><span class="cloud-word" tabindex="0" :style="'font-size:'+Math.max(13,word.size)+'px'" :title="word.count+' 条包含此词的提问'" x-text="word.text"></span></template><span class="word-cloud-empty" x-show="analytics.keywords.length===0">这些提问暂未匹配到关键词</span></div><p class="word-cloud-note">高频词更大，低频词更小；悬停或聚焦可查看提问数。</p></section>
+          </div>
+          <div class="analytics-summary"><div class="summary-heading"><div><span class="eyebrow">教学参考</span><h2>本期观察</h2></div><button type="button" class="report-export-button" @click="exportAnalyticsReport()" :disabled="reportExporting"><span aria-hidden="true">↓</span><span x-text="reportExporting ? '正在生成…' : '一键导出报告'"></span><small>Word</small></button></div><p x-text="analytics.summary"></p><small>分类按关键词规则归纳供教学参考；少量提问可能未能识别或归入“其他”。</small></div>
+          <section class="analytics-panel questions-panel"><div class="analytics-panel-heading"><div><span class="eyebrow">教学跟进建议</span><h2>高频问题</h2></div><span class="filter-status" x-text="analyticsFilter==='all' ? '全部分类' : (analytics.categories.find(category=>category.id===analyticsFilter)?.label || '当前分类')"></span></div>
+            <ol class="analytics-question-list"><template x-for="(item,index) in filteredAnalyticsQuestions" :key="item.categoryId+'|'+item.question"><li><span class="question-rank" x-text="String(index+1).padStart(2,'0')"></span><span class="question-text" x-text="item.question"></span><span class="question-category" x-text="item.categoryLabel"></span><strong class="question-count" x-text="item.count+' 次' "></strong></li></template></ol><p class="no-filtered-questions" x-show="filteredAnalyticsQuestions.length===0">该分类下暂无可展示的高频问题。</p>
+          </section>
+        </div></template>
+      </section>
+
+      <section class="analytics-view page-view account-admin-view" x-show="role==='admin'&&view==='admin'&&accountMode==='isolated'" x-cloak>
+        <div class="page-heading"><div><span class="eyebrow">管理员工作区</span><h1>账号与班级</h1><p>创建独立账号，并将学生和教师分配到对应班级。</p></div><button class="primary-button" type="button" @click="loadAdminOverview()" :disabled="adminLoading">刷新</button></div>
+        <div class="admin-grid">
+          <form class="analytics-panel admin-form" @submit.prevent="createAccount()"><div class="analytics-panel-heading"><div><span class="eyebrow">用户</span><h2>创建账号</h2></div></div>
+            <label>账号<input class="entry-name-input" x-model="newAccount.username" required maxlength="40" autocomplete="off" placeholder="例如：student_001"></label>
+            <label>姓名<input class="entry-name-input" x-model="newAccount.displayName" required maxlength="40" autocomplete="off" placeholder="显示名称"></label>
+            <label>初始密码<input class="entry-name-input" x-model="newAccount.password" required minlength="12" maxlength="128" autocomplete="new-password" type="password" placeholder="至少 12 位"></label>
+            <label>角色<select x-model="newAccount.role"><option value="student">学生</option><option value="teacher">教师</option><option value="admin">管理员</option></select></label>
+            <button class="primary-button" type="submit" :disabled="adminLoading">创建账号</button>
+          </form>
+          <form class="analytics-panel admin-form" @submit.prevent="createClass()"><div class="analytics-panel-heading"><div><span class="eyebrow">班级</span><h2>创建班级</h2></div></div>
+            <label>班级名称<input class="entry-name-input" x-model="newClassName" required maxlength="80" placeholder="例如：2026 级计算机 1 班"></label>
+            <button class="primary-button" type="submit" :disabled="adminLoading">创建班级</button>
+          </form>
+          <form class="analytics-panel admin-form" @submit.prevent="assignClass()"><div class="analytics-panel-heading"><div><span class="eyebrow">班级授权</span><h2>分配教师或学生</h2></div></div>
+            <label>班级<select x-model="assignClassId" required><option value="">选择班级</option><template x-for="item in adminClasses" :key="item.id"><option :value="item.id" x-text="item.name"></option></template></select></label>
+            <label>账号<select x-model="assignUserId" required><option value="">选择账号</option><template x-for="user in adminUsers.filter(u=>u.role==='student'||u.role==='teacher')" :key="user.id"><option :value="user.id" x-text="user.displayName+'（'+(user.role==='teacher'?'教师':'学生')+'）'"></option></template></select></label>
+            <button class="primary-button" type="submit" :disabled="adminLoading">添加班级授权</button>
+          </form>
+        </div>
+        <section class="analytics-panel admin-list-panel"><div class="analytics-panel-heading"><div><span class="eyebrow">当前配置</span><h2>账号与班级关系</h2></div><span x-text="adminUsers.length+' 个账号 · '+adminClasses.length+' 个班级'"></span></div>
+          <template x-for="classroom in adminClasses" :key="classroom.id"><div class="admin-class-row"><strong x-text="classroom.name"></strong><div class="admin-memberships"><template x-for="membership in adminMemberships.filter(m=>m.classId===classroom.id)" :key="membership.userId"><span class="admin-membership"><span x-text="(adminUsers.find(u=>u.id===membership.userId)?.displayName||membership.userId)+' · '+(adminUsers.find(u=>u.id===membership.userId)?.role==='teacher'?'教师':adminUsers.find(u=>u.id===membership.userId)?.role==='student'?'学生':'管理员')"></span><button type="button" :aria-label="'移除'+(adminUsers.find(u=>u.id===membership.userId)?.displayName||'账号')+'的班级授权'" @click="removeClassMembership(classroom.id,membership.userId)">移除</button></span></template><span class="admin-empty" x-show="!adminMemberships.some(m=>m.classId===classroom.id)">尚未分配账号</span></div></div></template>
+          <p class="admin-empty" x-show="!adminClasses.length">还没有班级，请先创建班级。</p>
+        </section>
+      </section>
+
+      <footer class="workspace-foot"><span>知芯 · EduEthos 学习工作室</span><span x-text="serviceStatus"></span></footer>
+    </main>
+
+  </div>
+
+  <div class="modal-backdrop" x-show="identityReady&&entryOpen" x-transition.opacity @click.self="showEntry()" x-cloak>
+    <section class="entry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-title" @keydown.escape.stop="showEntry()">
+      <div class="entry-brand"><div class="brand-mark">知</div><span>知芯 · EduEthos</span></div>
+      <div class="entry-kicker">课程学习工作室</div><h2 id="entry-title">欢迎来到学习空间</h2><p class="entry-description" x-show="accountMode==='isolated'">登录个人账号，访问你的课程问答与学习记录。</p><p class="entry-description" x-show="accountMode!=='isolated'">选择一种体验身份，看看课程问答与教学数据工作区。</p>
+      <section class="demo-account-card" x-show="demoUser" x-cloak>
+        <div class="demo-account-avatar" x-text="(demoUser?.displayName || demoUser?.username || '用').slice(0,1)"></div>
+        <h3 x-text="demoUser?.displayName || demoUser?.username"></h3>
+        <p><span x-text="demoUser?.username"></span> · <span x-text="demoUser?.role==='admin'?'管理员':demoUser?.role==='teacher'?(accountMode==='isolated'?'教师':'教师体验'):(accountMode==='isolated'?'学生':'学生体验')"></span></p>
+        <p class="demo-login-note" x-text="accountMode==='isolated'?'账号数据保存在你的个人空间中。':'历史记录仍保存在当前浏览器中。'"></p>
+        <button id="entry-return" class="entry-submit" type="button" @click="entryOpen=false">返回工作台 <span>→</span></button>
+        <button class="guest-entry" type="button" @click="logoutDemo()" :disabled="loginBusy" x-text="accountMode==='isolated'?'退出账号':'退出此体验账号'"></button>
+      </section>
+      <template x-if="demoLoginEnabled && !guestMode && !demoUser"><form class="demo-login-form" @submit.prevent="loginDemo()">
+        <label class="entry-name-label" for="demo-username" x-text="accountMode==='isolated'?'账号':'体验账号'"></label><input id="demo-username" class="entry-name-input" x-model="loginUsername" autocomplete="username" maxlength="80" placeholder="请输入账号" :disabled="loginBusy">
+        <label class="entry-name-label demo-password-label" for="demo-password">密码</label><input id="demo-password" class="entry-name-input" type="password" x-model="loginPassword" autocomplete="current-password" maxlength="128" placeholder="请输入密码" :disabled="loginBusy">
+        <p class="demo-login-error" role="alert" x-show="loginError" x-text="loginError"></p>
+        <button class="entry-submit" type="submit" :disabled="loginBusy"><span x-text="loginBusy?'正在登录…':accountMode==='isolated'?'登录账号':'登录体验账号'"></span><span>→</span></button>
+        <p class="demo-login-note" x-text="accountMode==='isolated'?'账号由管理员创建；请联系管理员重置密码。':'登录后可体验学生问答或教师数据总结；对话仍保存在当前浏览器。'"></p>
+      </form></template>
+      <div x-show="accountMode!=='isolated'&&(!demoLoginEnabled || guestMode) && !demoUser">
+      <label class="entry-name-label" for="entry-name">怎么称呼你 <span>选填</span></label><input id="entry-name" class="entry-name-input" x-model="entryName" maxlength="20" placeholder="例如：林同学">
+      <div class="entry-role-label">选择体验身份</div><div class="entry-roles"><button :class="{'chosen':entryRole==='student'}" @click="entryRole='student'"><span class="role-symbol">学</span><span><strong>学生体验</strong><small>提问与查看学习资料</small></span><i x-show="entryRole==='student'">✓</i></button><button :class="{'chosen':entryRole==='teacher'}" @click="entryRole='teacher'"><span class="role-symbol teacher-symbol">师</span><span><strong>教师体验</strong><small>查看数据总结与教学报告</small></span><i x-show="entryRole==='teacher'">✓</i></button></div>
+      <button class="entry-submit" @click="enterDemo()">进入学习工作室 <span>→</span></button></div>
+      <button class="guest-entry" type="button" x-show="accountMode!=='isolated'&&demoLoginEnabled && !guestMode && !demoUser" @click="guestMode=true;loginError='';$nextTick(()=>document.getElementById('entry-name')?.focus())">继续游客体验</button>
+        <button class="guest-entry" type="button" x-show="accountMode!=='isolated'&&demoLoginEnabled && guestMode && !demoUser" @click="guestMode=false;loginError='';$nextTick(()=>document.getElementById('demo-username')?.focus())">返回账号登录</button>
+      <a class="chatgpt-login-link" href="/signin-with-chatgpt?returnTo=%2F" target="_top" x-show="accountMode!=='isolated'&&signInRequired">使用 ChatGPT 登录</a>
+      <div class="entry-disclaimer"><span>i</span><p x-text="accountMode==='isolated'?'每个账号有独立的学习记录。教师统计仅展示管理员授权班级的学生提问；启用模型后，问题及相关资料片段会发送至 DeepSeek。':'体验身份不代表账号权限。启用模型后，提问及最近对话会发送至 DeepSeek；历史记录保存在当前浏览器。'"></p></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop source-backdrop" x-show="sourceOpen" x-transition.opacity @click.self="closeSource()" x-cloak>
+    <section class="source-dialog" role="dialog" aria-modal="true" aria-labelledby="source-title">
+      <div class="source-dialog-head"><div><span class="eyebrow">课程资料 · 引用</span><h2 id="source-title" x-text="activeSource?.title || '资料内容'"></h2></div><button class="icon-button" aria-label="关闭资料" @click="closeSource()">×</button></div>
+      <div class="source-tabs" x-show="relevantSources.length>1"><template x-for="source in relevantSources" :key="source.id"><button type="button" :class="{'selected':activeSource?.id===source.id}" @click="showSource(source.id)" x-text="sourceLabel(source)"></button></template></div>
+      <div class="source-location" x-text="activeSource?.section || '课程资料'"></div><p class="source-full-text" x-text="activeSource?.text"></p><div class="source-dialog-foot" x-text="activeSource?.origin==='preset' ? '旧版预置讲义快照' : (activeSource?.sourceFile ? '知识库原文提取片段 · '+activeSource.sourceFile : (activeSource?.custom ? '本地添加资料 · 仅保存在此浏览器' : '历史资料快照'))"></div>
+    </section>
+  </div>
+  <div class="toast" role="status" aria-live="polite" x-show="toast" x-transition.opacity><span x-text="toast"></span><button aria-label="关闭提示" @click="closeToast()">×</button></div>
+</body>
+</html>

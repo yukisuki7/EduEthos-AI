@@ -1,0 +1,13 @@
+evidence/
+*.tar.gz
+*.zip
+.DS_Store
+.env
+.env.*
+!.env.example
+build/
+worker/assets.mjs
+dist/server/
+dist/.openai/
+runtime/
+.deploy/

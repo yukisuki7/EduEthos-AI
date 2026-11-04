@@ -1,0 +1,19 @@
+{
+    admin off
+    auto_https disable_redirects
+    # Browsers omit SNI for an IP literal; select this IP certificate explicitly.
+    default_sni 203.0.113.10
+}
+
+# Separate Caddy process: existing HTTP :80 applications are not changed.
+# Substitute the public IP before installation. Requires inbound TCP 443.
+https://203.0.113.10 {
+    tls {
+        issuer acme {
+            dir https://acme-v02.api.letsencrypt.org/directory
+            profile shortlived
+            disable_http_challenge
+        }
+    }
+    reverse_proxy 127.0.0.1:8767
+}

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C · 数字课程讲义</title>
+  <style>
+    :root {
+      --paper: #fbfaf7;
+      --ink: #252522;
+      --muted: #57564f;
+      --rule: #dedbd4;
+      --red: #9d483d;
+      --wash: #f2f0ea;
+      --serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", SimSun, serif;
+      --sans: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); }
+    body { font-family: var(--sans); font-size: 15px; line-height: 1.65; }
+    .topbar {
+      height: 62px; border-bottom: 1px solid var(--rule); display: flex; align-items: center;
+      padding: 0 64px; gap: 38px; background: rgba(251,250,247,.96);
+    }
+    .brand { font-family: var(--serif); font-size: 18px; letter-spacing: .04em; white-space: nowrap; }
+    .brand b { color: var(--red); font-weight: 500; }
+    .crumb { color: #57564f; font-size: 13px; flex: 1; }
+    .crumb span { color: #68665f; margin: 0 10px; }
+    .top-meta { color: #57564f; font-size: 13px; letter-spacing: .08em; }
+    .layout { width: 1312px; margin: 0 auto; display: grid; grid-template-columns: 88px 800px 300px; column-gap: 42px; padding-top: 23px; }
+    .chapter-rail { padding-top: 11px; color: var(--red); text-align: right; }
+    .chapter-rail .num { font: 42px/1 var(--serif); letter-spacing: -.06em; }
+    .chapter-rail .label { margin-top: 14px; font-size: 13px; letter-spacing: .18em; writing-mode: vertical-rl; display: inline-block; }
+    .reader { padding: 0 0 30px; }
+    .eyebrow { color: var(--red); font-size: 13px; letter-spacing: .14em; margin: 0 0 8px; }
+    h1 { font: 500 40px/1.2 var(--serif); letter-spacing: .01em; margin: 0 0 10px; }
+    .dek { font: 16px/1.65 var(--serif); color: #45443f; margin: 0; max-width: 745px; }
+    .section-line { margin: 16px 0 12px; border: 0; border-top: 1px solid var(--rule); }
+    .section-head { display: flex; align-items: baseline; gap: 13px; margin-bottom: 7px; }
+    .section-head .index { color: var(--red); font: 17px var(--serif); }
+    h2 { font: 500 23px/1.4 var(--serif); margin: 0; }
+    .explain { margin: 0; color: #4a4944; line-height: 1.8; }
+    .hierarchy { margin: 12px 0 11px; padding: 10px 16px 9px; border: 1px solid var(--rule); background: #fffefa; }
+    .figure-label { display: flex; justify-content: space-between; color: #57564f; font-size: 13px; margin-bottom: 7px; }
+    .figure-label strong { color: var(--ink); font-weight: 500; letter-spacing: .05em; }
+    .levels { display: grid; grid-template-columns: 1fr 1.18fr 1.55fr 2.1fr; align-items: end; gap: 9px; height: 78px; }
+    .level { min-height: 42px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9c9c4; color: #713e37; background: #f6eeeb; font-size: 14px; }
+    .level:nth-child(2) { min-height: 51px; background: #f5f1eb; border-color: #ded8cd; color: #5d5a50; }
+    .level:nth-child(3) { min-height: 62px; background: #f1efe9; border-color: #ddd9cf; color: #57564f; }
+    .level:nth-child(4) { min-height: 73px; background: #eeece6; border-color: #d8d5cc; color: #57564f; }
+    .direction { display: flex; justify-content: space-between; font-size: 13px; color: #57564f; padding-top: 5px; }
+    .direction .fast { color: var(--red); }
+    .caption { color: #57564f; text-align: center; font-size: 13px; margin-top: 5px; }
+    .compare-title { display: flex; align-items: baseline; justify-content: space-between; margin: 10px 0 5px; }
+    .compare-title h3 { margin: 0; font: 500 18px var(--serif); }
+    .compare-title span { font-size: 13px; color: #57564f; }
+    table { table-layout: fixed; border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { border-top: 1px solid var(--rule); padding: 7px 13px; text-align: left; }
+    th:first-child { width: 130px; } th { font-size: 13px; font-weight: 500; color: #57564f; }
+    td:first-child { width: 112px; font-family: var(--serif); font-size: 16px; }
+    tr:last-child td { border-bottom: 1px solid var(--rule); }
+    .memory-note { margin-top: 10px; display: flex; gap: 13px; padding: 8px 15px; background: var(--wash); color: #45443f; font-size: 13px; }
+    .memory-note b { color: var(--red); white-space: nowrap; font-weight: 500; }
+    .margin { border-left: 1px solid var(--rule); padding: 9px 0 0 24px; margin-top: 9px; }
+    .margin-top { color: var(--red); font-size: 13px; letter-spacing: .12em; }
+    .question { margin: 9px 0 11px; font: 500 21px/1.48 var(--serif); }
+    .answer { border-left: 2px solid var(--red); padding-left: 14px; color: #3f3e39; font-size: 14px; line-height: 1.7; }
+    .answer p { margin: 0 0 8px; }
+    .source { margin: 12px 0 0; padding-top: 9px; border-top: 1px solid var(--rule); color: #57564f; font-size: 13px; }
+    .source b { display: block; color: #4d4c46; font-weight: 500; margin-bottom: 3px; }
+    .responsibility { margin-top: 18px; padding: 11px 13px 12px; background: #f4f1eb; }
+    .responsibility .tag { color: var(--red); font-size: 13px; letter-spacing: .1em; }
+    .responsibility h3 { font: 500 16px var(--serif); margin: 4px 0 5px; }
+    .responsibility p { font-size: 13px; line-height: 1.6; color: #45443f; margin: 0; }
+    .bottom { margin-top: 15px; padding-top: 9px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; color: #57564f; font-size: 13px; }
+    .bottom strong { font-weight: 500; color: #625f58; }
+    .notice { position: fixed; right: 22px; bottom: 18px; padding: 7px 12px; border: 1px solid #b9b5ac; background: rgba(251,250,247,.98); color: #45443f; font-size: 13px; }
+    @media (max-width: 1100px) { .layout { width: 94%; grid-template-columns: 56px minmax(0,1fr) 260px; column-gap: 24px; } .topbar { padding: 0 3%; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">知芯 <b>·</b> EduEthos</div>
+    <div class="crumb">课程 <span>/</span> 计算机组成原理 <span>/</span> 第 3 章 · 存储系统</div>
+    <div class="top-meta">数字课程讲义　C</div>
+  </header>
+  <main class="layout">
+    <aside class="chapter-rail" aria-label="章节编号"><div class="num">03</div><div class="label">存储系统</div></aside>
+    <article class="reader">
+      <p class="eyebrow">计算机组成原理　/　3.1</p>
+      <h1>让数据，等得更少一些</h1>
+      <p class="dek">Cache 与主存构成存储层次中相邻的一环。理解它们的速度、容量与成本差异，就能看见计算机如何用局部性缩短等待。</p>
+      <hr class="section-line">
+      <section>
+        <div class="section-head"><span class="index">01</span><h2>为什么需要 Cache？</h2></div>
+        <p class="explain">CPU 处理数据的速度通常快于主存供给数据的速度。Cache 把近期可能用到的数据和指令放在更靠近 CPU 的高速存储中，减少处理器等待。</p>
+        <figure class="hierarchy">
+          <div class="figure-label"><strong>存储层次 · 速度与容量的此消彼长</strong><span>示意图</span></div>
+          <div class="levels"><div class="level">Cache</div><div class="level">主存</div><div class="level">固态硬盘</div><div class="level">机械硬盘</div></div>
+          <div class="direction"><span class="fast">更快 · 单位成本更高</span><span>容量更大 · 速度较慢</span></div>
+          <figcaption class="caption">典型存储层次：用少量高速存储，配合大容量存储；图中尺寸不代表实际比例。</figcaption>
+        </figure>
+        <div class="compare-title"><h3>Cache 与主存</h3><span>关键差异一览</span></div>
+        <table aria-label="Cache 与主存比较">
+          <thead><tr><th>比较维度</th><th>Cache</th><th>主存</th></tr></thead>
+          <tbody>
+            <tr><td>容量 / 速度</td><td>容量较小、速度较快</td><td>容量较大、速度相对较慢</td></tr>
+            <tr><td>单位容量成本</td><td>较高</td><td>较低</td></tr>
+            <tr><td>主要职责</td><td>暂存近期可能再用的数据与指令</td><td>承载运行中的程序和数据</td></tr>
+          </tbody>
+        </table>
+        <div class="memory-note"><b>局部性原理</b><span>时间局部性：刚访问过的内容可能再次访问。空间局部性：相邻地址的内容可能很快被访问。</span></div>
+      </section>
+      <footer class="bottom"><span><strong>第 3 章</strong>　存储系统</span><span>3.1　存储层次与局部性　　03 / 08</span></footer>
+    </article>
+    <aside class="margin" aria-label="页边 AI 问答批注">
+      <div class="margin-top">页边批注　·　AI 答疑</div>
+      <h2 class="question">为什么需要 Cache？它和主存有什么区别？</h2>
+      <div class="answer">
+        <p>CPU 处理数据的速度通常快于主存供给数据的速度。Cache 把近期可能用到的数据和指令放在更靠近 CPU 的高速存储中，减少处理器等待。</p>
+        <p>简单来说，Cache 更快但容量小、单位容量成本高；主存容量更大、速度相对较慢，负责承载运行中的程序和数据。</p>
+      </div>
+      <div class="source"><b>回答依据</b>演示讲义 · 存储层次与局部性 §3.1</div>
+      <div class="responsibility">
+        <div class="tag">工程判断</div>
+        <h3>速度之外，还要权衡什么？</h3>
+        <p>性能不是唯一目标。设计存储系统时，还要权衡成本、能耗与可靠性，让技术选择服务于实际需求。</p>
+      </div>
+      <div class="source" style="margin-top:12px"><b>顺着读下去</b>Cache 未命中时会发生什么？</div>
+    </aside>
+  </main>
+  <div class="notice">界面预览 · 内容为演示讲义，尚未接入课程资料与 AI 服务</div>
+</body>
+</html>

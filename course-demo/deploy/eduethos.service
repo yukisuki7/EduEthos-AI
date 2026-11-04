@@ -1,0 +1,30 @@
+[Unit]
+Description=EduEthos course assistant with isolated accounts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=eduethos
+Group=eduethos
+WorkingDirectory=/opt/eduethos/current
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/eduethos/eduethos.env
+ExecStart=/usr/bin/node /opt/eduethos/current/server/index.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=70
+UMask=0077
+StateDirectory=eduethos
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/eduethos
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=768M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

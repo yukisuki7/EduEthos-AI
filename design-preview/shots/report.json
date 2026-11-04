@@ -1,0 +1,121 @@
+[
+  {
+    "file": "a.png",
+    "target": "a.html",
+    "name": "A · 课程学习工作台",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "animationWaitMs": 0,
+    "issues": [],
+    "lint": [
+      {
+        "rule": "eyebrow",
+        "label": "标题上方的眉标",
+        "count": 1,
+        "examples": [
+          "div.chapter-tag「第 3 章 · 存储系统」"
+        ]
+      }
+    ]
+  },
+  {
+    "file": "b.png",
+    "target": "b.html",
+    "name": "B · 计算机实验台",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "animationWaitMs": 0,
+    "issues": [],
+    "lint": [
+      {
+        "rule": "eyebrow",
+        "label": "标题上方的眉标",
+        "count": 1,
+        "examples": [
+          "div.eyebrow.mono「实验台 03 / 存储层次」"
+        ]
+      }
+    ]
+  },
+  {
+    "file": "c.png",
+    "target": "c.html",
+    "name": "C · 数字课程讲义",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "animationWaitMs": 0,
+    "issues": [],
+    "lint": [
+      {
+        "rule": "eyebrow",
+        "label": "标题上方的眉标",
+        "count": 1,
+        "examples": [
+          "p.eyebrow「计算机组成原理 / 3.1」"
+        ]
+      },
+      {
+        "rule": "sideStripe",
+        "label": "彩色单侧边线",
+        "count": 1,
+        "examples": [
+          "div.answer「CPU 处理数据的速度通常快于主存供给数据的速度」（2px）"
+        ]
+      },
+      {
+        "rule": "longMeasure",
+        "label": "正文行太长",
+        "count": 2,
+        "examples": [
+          "p.dek「Cache 与主存构成存储层次中相邻的一环。理解」（每行约 47 字）",
+          "p.explain「CPU 处理数据的速度通常快于主存供给数据的速度」（每行约 53 字）"
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sheet.png",
+    "width": 2000,
+    "height": 480,
+    "columns": 3,
+    "items": [
+      {
+        "naturalWidth": 1440,
+        "naturalHeight": 900,
+        "width": 640,
+        "height": 400,
+        "labelHeight": 32,
+        "x": 24,
+        "y": 24,
+        "label": "A · 课程学习工作台",
+        "labelY": 432
+      },
+      {
+        "naturalWidth": 1440,
+        "naturalHeight": 900,
+        "width": 640,
+        "height": 400,
+        "labelHeight": 32,
+        "x": 680,
+        "y": 24,
+        "label": "B · 计算机实验台",
+        "labelY": 432
+      },
+      {
+        "naturalWidth": 1440,
+        "naturalHeight": 900,
+        "width": 640,
+        "height": 400,
+        "labelHeight": 32,
+        "x": 1336,
+        "y": 24,
+        "label": "C · 数字课程讲义",
+        "labelY": 432
+      }
+    ],
+    "issues": []
+  }
+]
