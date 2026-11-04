@@ -20,6 +20,8 @@
 
 ## 本地运行
 
+参与修改和提交 PR 见 [项目协作](docs/COLLABORATION.md)；合并后的上线与故障处理见 [持续部署说明](course-demo/deploy/CONTINUOUS-DEPLOYMENT.md)。
+
 需要 Node.js 22.22 或更新版本，自托管服务使用内置 `node:sqlite`。
 
 ```powershell

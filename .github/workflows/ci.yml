@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: course-demo
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.22.3'
+
+      - name: Build and verify Worker
+        run: |
+          node scripts/build-worker.mjs
+          node scripts/check-worker.mjs
+
+      - name: Verify scoped knowledge retrieval
+        run: node ../knowledge-base/runtime/check-retrieval.mjs
+
+      - name: Verify personal accounts and authorization
+        run: |
+          node scripts/check-account-isolation.mjs
+          node scripts/check-account-http.mjs
+          node scripts/check-account-ui.cjs
+
+      - name: Verify answer policy and presentation
+        run: |
+          node scripts/check-answer-policy.mjs
+          node scripts/check-answer-ui.cjs
+          node scripts/check-auto-teaching.mjs
+
+      - name: Verify legacy demo authentication
+        run: |
+          node scripts/check-demo-auth.mjs
+          node scripts/check-demo-ui.cjs
+
+      - name: Verify deployment archive, database backup and rollback
+        run: python3 scripts/check-deployment.py
